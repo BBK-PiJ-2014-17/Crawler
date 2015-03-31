@@ -3,9 +3,14 @@
  */
 public class WebCrawler implements Crawler {
 
+    /* C O N S T R U C T O R S */
+
+    public WebCrawler() {
+
+    }
 
     @Override
-    public void crawl(String webUrl, String dbType, String dbUrl, String dbUsername, String dbPassword) {
+    public void crawl(String webUrl) {
 
     }
 

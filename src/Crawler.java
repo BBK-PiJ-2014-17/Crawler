@@ -3,11 +3,7 @@
  */
 public interface Crawler {
 
-    public void crawl(String webUrl,
-                      String dbType,
-                      String dbUrl,
-                      String dbUsername,
-                      String dbPassword);
+    public void crawl(String webUrl);
 
     public boolean search();
 
