@@ -2,6 +2,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.print.DocFlavor;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,8 +41,9 @@ public class ReaderTest {
     @Test
     public void testReadUntil() throws Exception {
 
-        // expected beginning of inputStream = '<!doctype html>'
-
+        /*
+            ** expected beginning of inputStream = '<!doctype html>'
+         */
         char ch1, ch2;
         String expected, remainder;
 
@@ -49,7 +51,7 @@ public class ReaderTest {
         ch1 = 't';                  // char at 6th position
         ch2 = Character.MIN_VALUE;  // default, not relevant
         expected = "type html>";    // first 10 characters of expected remaining inputStream
-        assertTrue(reader.readUntil(inputStream, ch1, ch2));    // reader expected to return true
+        assertTrue(reader.readUntil(inputStream, ch1, ch2));    // readUntil expected to return true
         remainder = inputStream.toString().substring(0, 10);    // get portion of remaining input stream
         assertTrue(remainder.equals(expected));                 // compare strings
 
@@ -57,7 +59,7 @@ public class ReaderTest {
         ch1 = Character.MIN_VALUE;  // default, not relevant
         ch2 = 'h';                  // char at 11th position
         expected = "html>";         // first 6 characters of expected remaining inputStream
-        assertTrue(!reader.readUntil(inputStream, ch1, ch2));   // reader expected to return false
+        assertTrue(!reader.readUntil(inputStream, ch1, ch2));   // readUntil expected to return false
         remainder = inputStream.toString().substring(0, 6);     // get portion of remaining input stream
         assertTrue(remainder.equals(expected));                 // compare strings
 
@@ -66,13 +68,49 @@ public class ReaderTest {
         int i;                      // expected return from empty inputStream
         ch1 = Character.MIN_VALUE;  // default, not relevant
         ch2 = Character.MIN_VALUE;  // default, not relevant
-        assertTrue(!reader.readUntil(inputStream, ch1, ch2));   // reader expected to return false
+        assertTrue(!reader.readUntil(inputStream, ch1, ch2));   // readUntil expected to return false
         assertTrue((i=inputStream.read()) == -1);               // check inputStream is empty
 
     }
 
     @Test
     public void testSkipSpace() throws Exception {
+
+        // test with various types of whitespace
+
+        /*
+            ** expected beginning of inputStream = '<!doctype html>'
+         */
+        char ch, expected;
+        String remainder, remainderExpected;
+
+        // first non-whitespace found returned
+        ch = Character.MIN_VALUE;               // default, not relevant
+        expected = '<';                         // expected to be '<'
+        remainderExpected = "!doctype html>";   // first 14 characters of expected remaining inputStream
+        assertTrue(reader.skipSpace(inputStream, ch) == expected);      // skipSpace returns char equal to expected
+        remainder = inputStream.toString().substring(0, 14);            // get portion of remaining input stream
+        assertTrue(remainder.equals(remainderExpected));                // compare strings
+
+        // check whitespace skipped
+        // read inputStream until on character before whitespace
+        reader.readUntil(inputStream, 'e', Character.MIN_VALUE);
+
+        // input stream is now on whitespace and should be skipped
+        expected = 'h';                         // expected to be 'h'
+        remainderExpected = "tml>";             // first 4 characters of expected remaining inputStream
+        assertTrue(reader.skipSpace(inputStream, ch) == expected);      // skipSpace should skip whitespace and
+                                                                        // return char equal to expected
+        remainder = inputStream.toString().substring(0, 4);             // get portion of remaining input stream
+        assertTrue(remainder.equals(remainderExpected));                // compare strings
+
+        // check car found and Character.MIN_VALUE returned
+        ch = 'm';                               // 2nd letter of what remains
+        expected = Character.MIN_VALUE;         // expected return value
+        remainderExpected = "l>";               // first 2 characters of expected remaining inputStream
+        assertTrue(reader.skipSpace(inputStream, ch) == expected);      // Character.MIN_VALUE expected
+        remainder = inputStream.toString().substring(0, 2);             // get portion of remaining input stream
+        assertTrue(remainder.equals(remainderExpected));                // compare strings
 
     }
 
