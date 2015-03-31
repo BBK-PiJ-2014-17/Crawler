@@ -1,5 +1,6 @@
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.print.DocFlavor;
@@ -80,7 +81,7 @@ public class ReaderTest {
 
     }
 
-    @Test
+    @Ignore
     public void testSkipSpace() throws Exception {
 
         // test with various types of whitespace
@@ -122,7 +123,7 @@ public class ReaderTest {
 
     }
 
-    @Test
+    @Ignore
     public void testReadString() throws Exception {
 
         // check case
