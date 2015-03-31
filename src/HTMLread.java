@@ -74,13 +74,14 @@ public class HTMLread implements Reader {
             while((b=in.read()) != -1) {
 
                 char c = (char) b;
-                sb.append(c);
 
                 if (c == ch1)
                     return sb.toString();
 
                 if (c == ch2)
                     return null;
+
+                sb.append(c);
             }
 
         } catch (IOException e) {

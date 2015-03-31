@@ -56,29 +56,29 @@ public class ReaderTest {
         char ch1, ch2;                          // char arguments
         int s = 3;                              // inputStream snippet length for testing
         byte[] b;                               // byte array from inputStream to test
-        String nextChars, nextCharsExoected;    // strings to check position of inputStream
+        String nextChars, nextCharsExpected;    // strings to check position of inputStream
 
         // case 1.
         // first char found. Expects true and input stream read to correct point
         ch1 = 't';                                              // char at 6th position
         ch2 = Character.MIN_VALUE;                              // default, not relevant in this test
-        nextCharsExoected = "ype";                              // next 3 characters of remaining inputStream
+        nextCharsExpected = "ype";                              // next 3 characters of remaining inputStream
         assertTrue(reader.readUntil(inputStream, ch1, ch2));    // readUntil expected to return true
         b = new byte[s];
         inputStream.read(b, 0, s);                              // read next 3 characters and store in byte array
         nextChars = new String(b);                              // construct string from byte array
-        assertTrue(nextChars.equals(nextCharsExoected));        // compare strings
+        assertTrue(nextChars.equals(nextCharsExpected));        // compare strings
 
         // case 2.
         // second char found. Expects false and input stream read to correct point
         ch1 = Character.MIN_VALUE;                              // default, not relevant in this test
         ch2 = 'h';                                              // char at 11th position
-        nextCharsExoected = "tml";                              // next 3 characters of remaining inputStream
+        nextCharsExpected = "tml";                              // next 3 characters of remaining inputStream
         assertTrue(!reader.readUntil(inputStream, ch1, ch2));   // readUntil expected to return false
         b = new byte[s];
         inputStream.read(b, 0, s);                              // read next 3 characters and store in byte array
         nextChars = new String(b);                              // construct string from byte array
-        assertTrue(nextChars.equals(nextCharsExoected));        // compare strings
+        assertTrue(nextChars.equals(nextCharsExpected));        // compare strings
 
         // case 3
         // neither char found. Expects false and empty stream remaining
@@ -146,39 +146,49 @@ public class ReaderTest {
     @Test
     public void testReadString() throws Exception {
 
-        // check case
-
         /*
             ** expected beginning of inputStream = '<!doctype html><html itemscope="" itemtype="http://schema.org/WebPage" lang="en-GB"><head><meta...'
          */
-        char ch1, ch2;
-        String expected, remainder, remainderExpected;
+        char ch1, ch2;                                      // char arguments
+        int s = 3;                                          // inputStream snippet length for testing
+        byte[] b;                                           // byte array from inputStream to test
+        String expected, nextChars, nextCharsExpected;      // strings to check position of inputStream and return
 
-        // first char found expects string of chars read returned
-        ch1 = 'c';                          // char at 6th position
-        ch2 = Character.MIN_VALUE;          // default, not relevant in this test
-        expected = "<!do";                  // expected chars read
-        remainderExpected = "type html>";   // first 10 characters of remaining inputStream
+        // case 1.
+        // first char found. Expect string of chars read and input stream read to correct point
+        ch1 = 'c';                                              // char at 5th position
+        ch2 = Character.MIN_VALUE;                              // default, not relevant in this test
+        expected = "<!do";                                      // expected string of chars read so far
+        nextCharsExpected = "typ";                              // next 3 characters of remaining inputStream
         assertTrue(reader.readString(inputStream, ch1, ch2).equals(expected));      // readString expected to return
                                                                                     // string of read chars
-        remainder = inputStream.toString().substring(0, 10);            // get portion of remaining input stream
-        assertTrue(remainder.equals(remainderExpected));                // compare strings
+        b = new byte[s];
+        inputStream.read(b, 0, s);                              // read next 3 characters and store in byte array
+        nextChars = new String(b);                              // construct string from byte array
+        assertTrue(nextChars.equals(nextCharsExpected));        // compare strings
 
-        // second char found expects null and input stream read to point
-        ch1 = Character.MIN_VALUE;  // default, not relevant in this test
-        ch2 = 'l';                  // char at 9th position
-        expected = null;            // expect null return
-        remainderExpected = ">";    // next character of inputStream
-        assertTrue(reader.readString(inputStream, ch1, ch2).equals(expected));      // readString expected to return null
-        remainder = String.valueOf(inputStream.read());                         // get next byte as String
-        assertTrue(remainder.equals(remainderExpected));                        // compare strings
+        // case 2
+        // second char found. Expect null and input stream read to correct point
+        ch1 = Character.MIN_VALUE;                              // default, not relevant in this test
+        ch2 = 's';                                              // char to find
+        expected = null;                                        // expect null return
+        nextCharsExpected = "cop";                              // next 3 characters of remaining inputStream
+        assertTrue(reader.readString(inputStream, ch1, ch2) == null);  // readString expected to return null
+        b = new byte[s];
+        inputStream.read(b, 0, s);                              // read next 3 characters and store in byte array
+        nextChars = new String(b);                              // construct string from byte array
+        assertTrue(nextChars.equals(nextCharsExpected));        // compare strings
 
-        // neither char found expects null and empty stream remaining
+        // case 3
+        // neither char found. Expect null and empty stream remaining
         int i;                      // expected return from empty inputStream
         ch1 = Character.MIN_VALUE;  // default, not relevant in this test
         ch2 = Character.MIN_VALUE;  // default, not relevant in this test
-        assertTrue(reader.readString(inputStream, ch1, ch2).equals(expected));   // readUntil expected to return false
+        assertTrue(reader.readString(inputStream, ch1, ch2) == null);   // readString expected to return null
         assertTrue((i=inputStream.read()) == -1);               // check inputStream is empty
+
+        // case 4
+        // ignoring case
 
     }
 }
