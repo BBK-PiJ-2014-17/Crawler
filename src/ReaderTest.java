@@ -45,7 +45,7 @@ public class ReaderTest {
 
     }
 
-    @Test
+    @Ignore
     public void testReadUntil() throws Exception {
 
         // check case
@@ -53,32 +53,32 @@ public class ReaderTest {
         /*
             ** expected beginning of inputStream = '<!doctype html><html itemscope="" itemtype="http://schema.org/WebPage" lang="en-GB"><head><meta...'
          */
-        char ch1, ch2;                  // char arguments
-        int s = 3;                      // inputStream snippet length for testing
-        byte[] b;                       // byte array from inputStream to test
-        String expected, nextChars;     // strings for expected return value and to check position in inputStream
+        char ch1, ch2;                          // char arguments
+        int s = 3;                              // inputStream snippet length for testing
+        byte[] b;                               // byte array from inputStream to test
+        String nextChars, nextCharsExoected;    // strings to check position of inputStream
 
         // case 1.
         // first char found. Expects true and input stream read to correct point
         ch1 = 't';                                              // char at 6th position
         ch2 = Character.MIN_VALUE;                              // default, not relevant in this test
-        expected = "ype";                                       // next 3 characters of remaining inputStream
+        nextCharsExoected = "ype";                              // next 3 characters of remaining inputStream
         assertTrue(reader.readUntil(inputStream, ch1, ch2));    // readUntil expected to return true
         b = new byte[s];
         inputStream.read(b, 0, s);                              // read next 3 characters and store in byte array
         nextChars = new String(b);                              // construct string from byte array
-        assertTrue(nextChars.equals(expected));                 // compare strings
+        assertTrue(nextChars.equals(nextCharsExoected));        // compare strings
 
         // case 2.
         // second char found. Expects false and input stream read to correct point
         ch1 = Character.MIN_VALUE;                              // default, not relevant in this test
         ch2 = 'h';                                              // char at 11th position
-        expected = "tml";                                       // next 3 characters of remaining inputStream
+        nextCharsExoected = "tml";                              // next 3 characters of remaining inputStream
         assertTrue(!reader.readUntil(inputStream, ch1, ch2));   // readUntil expected to return false
         b = new byte[s];
         inputStream.read(b, 0, s);                              // read next 3 characters and store in byte array
         nextChars = new String(b);                              // construct string from byte array
-        assertTrue(nextChars.equals(expected));                 // compare strings
+        assertTrue(nextChars.equals(nextCharsExoected));        // compare strings
 
         // case 3
         // neither char found. Expects false and empty stream remaining
@@ -88,47 +88,58 @@ public class ReaderTest {
         assertTrue(!reader.readUntil(inputStream, ch1, ch2));   // readUntil expected to return false
         assertTrue((i=inputStream.read()) == -1);               // check inputStream is empty
 
+        // case 4
+        // ignoring case
+
     }
 
-    @Ignore
+    @Test
     public void testSkipSpace() throws Exception {
-
-        // test with various types of whitespace
-
 
         /*
             ** expected beginning of inputStream = '<!doctype html><html itemscope="" itemtype="http://schema.org/WebPage" lang="en-GB"><head><meta...'
          */
-        char ch, expected;
-        String remainder, remainderExpected;
+        char ch, expected;                      // input and expected chars
+        int s = 3;                              // inputStream snippet length for testing
+        byte[] b;                               // byte array from inputStream to test
+        String nextChars, nextCharsExpected;    // strings to check position of inputStream
 
-        // first non-whitespace found returned
-        ch = Character.MIN_VALUE;               // default, not relevant in this test
-        expected = '<';                         // expected to be '<'
-        remainderExpected = "!doctype html>";   // first 14 characters of expected remaining inputStream
+        // case 1
+        // first non-whitespace found and returned
+        ch = Character.MIN_VALUE;                                       // default, not relevant in this test
+        expected = '<';                                                 // expected to be '<'
+        nextCharsExpected = "!do";                                      // next 3 characters of remaining inputStream
         assertTrue(reader.skipSpace(inputStream, ch) == expected);      // skipSpace returns char equal to expected
-        remainder = inputStream.toString().substring(0, 14);            // get portion of remaining input stream
-        assertTrue(remainder.equals(remainderExpected));                // compare strings
+        b = new byte[s];
+        inputStream.read(b, 0, s);                                      // read next 3 characters and store in byte array
+        nextChars = new String(b);                                      // construct string from byte array
+        assertTrue(nextChars.equals(nextCharsExpected));                // compare strings
 
-        // check whitespace skipped
+        // case 2
+        // input on whitespace, check skipped.
         // read inputStream until on character before whitespace
         reader.readUntil(inputStream, 'e', Character.MIN_VALUE);
 
         // input stream is now on whitespace and should be skipped
-        expected = 'h';                         // expected to be 'h'
-        remainderExpected = "tml>";             // first 4 characters of expected remaining inputStream
+        expected = 'h';                                                 // expected to be 'h'
+        nextCharsExpected = "tml";                                      // next 3 characters of remaining inputStream
         assertTrue(reader.skipSpace(inputStream, ch) == expected);      // skipSpace should skip whitespace and
                                                                         // return char equal to expected
-        remainder = inputStream.toString().substring(0, 4);             // get portion of remaining input stream
-        assertTrue(remainder.equals(remainderExpected));                // compare strings
+        b = new byte[s];
+        inputStream.read(b, 0, s);                                      // read next 3 characters and store in byte array
+        nextChars = new String(b);                                      // construct string from byte array
+        assertTrue(nextChars.equals(nextCharsExpected));                // compare strings
 
-        // check car found and Character.MIN_VALUE returned
-        ch = 'm';                               // 2nd letter of what remains
-        expected = Character.MIN_VALUE;         // expected return value
-        remainderExpected = "l>";               // first 2 characters of expected remaining inputStream
+        // case 3
+        // char found. Expect Character.MIN_VALUE returned
+        ch = '>';                                                       // next non-whitespace char
+        expected = Character.MIN_VALUE;                                 // expected return value
+        nextCharsExpected = "<ht";                                      // next 3 characters of remaining inputStream
         assertTrue(reader.skipSpace(inputStream, ch) == expected);      // Character.MIN_VALUE expected
-        remainder = inputStream.toString().substring(0, 2);             // get portion of remaining input stream
-        assertTrue(remainder.equals(remainderExpected));                // compare strings
+        b = new byte[s];
+        inputStream.read(b, 0, s);                                      // read next 3 characters and store in byte array
+        nextChars = new String(b);                                      // construct string from byte array
+        assertTrue(nextChars.equals(nextCharsExpected));                // compare strings
 
     }
 

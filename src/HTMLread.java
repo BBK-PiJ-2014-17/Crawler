@@ -45,11 +45,15 @@ public class HTMLread implements Reader {
         try {
             while((b=in.read()) != -1) {
 
-                if ((char) b == ' ')
-                    return (char) in.read();
+                // test all whitespace
 
-                if ((char) b == ch)
-                    return Character.MIN_VALUE;
+                if (!Character.isWhitespace((char) b)) {
+                    if ((char) b == ch) {
+                        return Character.MIN_VALUE;
+                    } else {
+                        return (char) b;
+                    }
+                }
             }
 
         } catch (IOException e) {
