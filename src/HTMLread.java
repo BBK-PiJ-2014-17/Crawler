@@ -66,6 +66,27 @@ public class HTMLread implements Reader {
 
     @Override
     public String readString(InputStream in, char ch1, char ch2) {
+
+        StringBuilder sb = new StringBuilder();
+        int b;
+
+        try {
+            while((b=in.read()) != -1) {
+
+                char c = (char) b;
+                sb.append(c);
+
+                if (c == ch1)
+                    return sb.toString();
+
+                if (c == ch2)
+                    return null;
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         return null;
     }
 }

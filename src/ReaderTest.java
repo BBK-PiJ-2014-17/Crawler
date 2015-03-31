@@ -93,7 +93,7 @@ public class ReaderTest {
 
     }
 
-    @Test
+    @Ignore
     public void testSkipSpace() throws Exception {
 
         /*
@@ -143,7 +143,7 @@ public class ReaderTest {
 
     }
 
-    @Ignore
+    @Test
     public void testReadString() throws Exception {
 
         // check case
