@@ -111,8 +111,14 @@ public class WebCrawler implements Crawler {
 
                             for (String attribute : split) {
 
-                                if (attribute.substring(0,4).equals("href")) {
-                                    href = attribute.substring(6, attribute.length() - 1);
+                                if (attribute.length() > 3) {
+
+                                    System.out.println(attribute.substring(0,3));
+                                    System.out.println(attribute.substring(4, attribute.length() - 1));
+
+                                    if (attribute.substring(0,4).equals("href"))
+                                        href = attribute.substring(4, attribute.length() - 1);
+
                                 }
 
                             }
@@ -135,7 +141,7 @@ public class WebCrawler implements Crawler {
                                 }
 */
                                 // read href
-                                href = reader.readString(inputStream, QUOTES, CLOSE_TAG);
+                            href = reader.readString(inputStream, QUOTES, CLOSE_TAG);
 
                         } //else {
 
@@ -147,8 +153,6 @@ public class WebCrawler implements Crawler {
                         sb.append("" + CLOSE_TAG);
 
                     }
-
-
 
                     System.out.println(sb.toString());
 
@@ -167,6 +171,10 @@ public class WebCrawler implements Crawler {
                         //System.out.println(sb.toString());
                         //break;
                     //}
+                } else {
+
+                    break;
+
                 }
 
                 //break;
