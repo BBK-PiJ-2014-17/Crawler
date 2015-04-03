@@ -22,7 +22,7 @@ public interface Reader {
      *            encountered and return false.
      * @return true if ch1 found in InputStream
      */
-    public boolean readUntil(InputStream in, char ch1, char ch2);
+    boolean readUntil(InputStream in, char ch1, char ch2);
 
     /**
      * <code>skipSpace()</code>
@@ -42,7 +42,7 @@ public interface Reader {
      *           the smallest possible value of char.
      * @return char from input stream
      */
-    public char skipSpace(InputStream in, char ch);
+    char skipSpace(InputStream in, char ch);
 
     /**
      * <code>readString()</code>
@@ -62,6 +62,6 @@ public interface Reader {
      *            encountered and return the special String value null.
      * @return a String from the input or the null String
      */
-    public String readString(InputStream in, char ch1, char ch2);
+    String readString(InputStream in, char ch1, char ch2);
 
 }

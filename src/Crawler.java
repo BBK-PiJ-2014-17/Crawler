@@ -1,10 +1,13 @@
+import java.net.URL;
+import java.sql.Connection;
+
 /**
  * Created by Basil on 29/03/2015.
  */
 public interface Crawler {
 
-    public void crawl(String webUrl);
+    void crawl(URL webUrl,Connection db, String table, int depth);
 
-    public boolean search();
+    boolean search();
 
 }
