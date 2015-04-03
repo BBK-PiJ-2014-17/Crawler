@@ -11,6 +11,9 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by Basil on 28/03/2015.
@@ -26,6 +29,15 @@ public class WebCrawler implements Crawler {
 
     @Override
     public void crawl(URL webUrl, Connection db, String table, int depth) {
+
+        /*
+            HTML tag structure assumed to be:
+            <tag class="value"></tag>
+
+            or
+
+            </tag>
+         */
 
         Reader reader = new HTMLread();
 
@@ -46,11 +58,19 @@ public class WebCrawler implements Crawler {
                     //StringBuilder sb = new StringBuilder("" + OPEN_TAG);
                     StringBuilder sb = new StringBuilder();
 
-                    // 2. skip whitespace until character read or closing tag found
+                    //2. skip whitespace until character read or closing tag found
                     sb.append(reader.skipSpace(inputStream, CLOSE_TAG));    // single tag check?
 
                     // 3. read tag until next whitespace or closing tag
-                    String element = reader.readString(inputStream, SPACE, CLOSE_TAG);
+                    String wholeTag = reader.readString(inputStream, CLOSE_TAG, Character.MIN_VALUE);
+                    sb.append(wholeTag);
+
+                    // split string into array of attributes
+                    //List<String> split = new ArrayList<String>(Arrays.asList(sb.toString().split("\\s+")));
+                    String[] split = sb.toString().split("\\s+"); // regex split on consecutive spaces
+
+                    // word tag is element
+                    String element = split[0];
 
                     // anchor always goes '<a ', space
                     // end tag reached before space, tag is not an anchor
@@ -58,7 +78,7 @@ public class WebCrawler implements Crawler {
                         continue;
                     } else {
                         // element candidate for anchor
-                        sb.append(element);
+                        //sb.append(element);
 
                         // need check on script before anchor because otherwise continuing could find '<', '>' chars out of
                         // html context
@@ -87,8 +107,18 @@ public class WebCrawler implements Crawler {
 
                         } else if (element.equals("a")){
 
-                                String href;
+                            String href;
 
+                            for (String attribute : split) {
+
+                                if (attribute.substring(0,4).equals("href")) {
+                                    href = attribute.substring(6, attribute.length() - 1);
+                                }
+
+                            }
+
+
+                            /*
                                 // is anchor, get href
                                 while(true) {
 
@@ -103,16 +133,16 @@ public class WebCrawler implements Crawler {
                                     }
 
                                 }
-
+*/
                                 // read href
                                 href = reader.readString(inputStream, QUOTES, CLOSE_TAG);
 
-                        } else {
+                        } //else {
 
                             // scan to closing bracket
-                            reader.readUntil(inputStream, CLOSE_TAG, Character.MIN_VALUE);
+                            //reader.readUntil(inputStream, CLOSE_TAG, Character.MIN_VALUE);
 
-                        }
+                        //}
 
                         sb.append("" + CLOSE_TAG);
 
