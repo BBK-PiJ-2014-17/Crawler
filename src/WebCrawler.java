@@ -20,7 +20,9 @@ public class WebCrawler implements Crawler {
     private char    OPEN_TAG = '<',
                     CLOSE_TAG = '>',
                     SPACE = ' ',
-                    FORWARD_SLASH = '/';
+                    FORWARD_SLASH = '/',
+                    EQUALS = '=',
+                    QUOTES = '"';
 
     @Override
     public void crawl(URL webUrl, Connection db, String table, int depth) {
@@ -41,41 +43,83 @@ public class WebCrawler implements Crawler {
                 // 1. find opening tag
                 if (reader.readUntil(inputStream, OPEN_TAG, CLOSE_TAG)) {
 
-                    StringBuilder sb = new StringBuilder("" + OPEN_TAG);
+                    //StringBuilder sb = new StringBuilder("" + OPEN_TAG);
+                    StringBuilder sb = new StringBuilder();
 
                     // 2. skip whitespace until character read or closing tag found
-                    sb.append(reader.skipSpace(inputStream, CLOSE_TAG));
+                    sb.append(reader.skipSpace(inputStream, CLOSE_TAG));    // single tag check?
 
-                    // 3. read tag until next whitespace
-                    sb.append(reader.readString(inputStream, SPACE, OPEN_TAG));
+                    // 3. read tag until next whitespace or closing tag
+                    String element = reader.readString(inputStream, SPACE, CLOSE_TAG);
 
-                    sb.append("" + CLOSE_TAG);
+                    // anchor always goes '<a ', space
+                    // end tag reached before space, tag is not an anchor
+                    if (element == null) {
+                        continue;
+                    } else {
+                        // element candidate for anchor
+                        sb.append(element);
 
-                    // 4. skip script element, contains '<', '>' in wrong context
-                    if (sb.toString().substring(1,sb.length() - 1).equals("script")){
+                        // need check on script before anchor because otherwise continuing could find '<', '>' chars out of
+                        // html context
+                        // 4. check if script element, contains '<', '>' in wrong context
+                        if (element.equals("script")){
 
-                        // scan until closing </script> tag
-                        while(true) {
+                            // scan until closing </script> tag
+                            while(true) {
 
-                            // look for consecutive '<' and '/'
-                            if (reader.readUntil(inputStream, OPEN_TAG, Character.MIN_VALUE)) {
-                                if (reader.skipSpace(inputStream, FORWARD_SLASH) != Character.MIN_VALUE) {
-                                    // next character not FORWARD_SLASH, continue
-                                    continue;
-                                } else {
-                                    // sequence '</' found, check is script tag
-                                    if (reader.readString(inputStream, CLOSE_TAG, OPEN_TAG).equals("script"))
-                                        break;
+                                // look for consecutive '<' and '/'
+                                if (reader.readUntil(inputStream, OPEN_TAG, Character.MIN_VALUE)) {
+                                    if (reader.skipSpace(inputStream, FORWARD_SLASH) != Character.MIN_VALUE) {
+                                        // next character not FORWARD_SLASH, continue
+                                        continue;
+                                    } else {
+                                        // sequence '</' found, check is script tag
+                                        if (reader.readString(inputStream, CLOSE_TAG, OPEN_TAG).equals("script"))
+                                            break;
+
+                                    }
+
 
                                 }
 
-
                             }
+
+                        } else if (element.equals("a")){
+
+                                String href;
+
+                                // is anchor, get href
+                                while(true) {
+
+                                    // scan attributes
+                                    if (reader.skipSpace(inputStream, 'h') != Character.MIN_VALUE) {
+                                        // next character not FORWARD_SLASH, continue
+                                        continue;
+                                    } else {
+                                        // href attribute found
+                                        if (reader.readString(inputStream, QUOTES, CLOSE_TAG).equals("ref="))
+                                            break;
+                                    }
+
+                                }
+
+                                // read href
+                                href = reader.readString(inputStream, QUOTES, CLOSE_TAG);
+
+                        } else {
+
+                            // scan to closing bracket
+                            reader.readUntil(inputStream, CLOSE_TAG, Character.MIN_VALUE);
 
                         }
 
+                        sb.append("" + CLOSE_TAG);
 
                     }
+
+
+
                     System.out.println(sb.toString());
 
                     //char c = Character.MAX_VALUE;
@@ -95,7 +139,7 @@ public class WebCrawler implements Crawler {
                     //}
                 }
 
-                break;
+                //break;
 
             }
 /*

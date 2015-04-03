@@ -38,7 +38,7 @@ public class WebCrawlerMain {
 
             String mainTable = "WC_URL";
             String stagingTable = "WC_URL_STAGING";
-
+            //connection.createStatement().execute("drop table WC_URL");
             connection.createStatement().execute("create table WC_URL(priority int, url varchar(20))");
 
             // crawl web address
