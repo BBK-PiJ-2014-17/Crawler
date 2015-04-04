@@ -119,11 +119,9 @@ public class CrawlerTest {
                     + MAIN;
 
             resultSet = statement.executeQuery(sql);
-            ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-
             // push URLs into list
             while(resultSet.next()) {
-                urls.add(new URL(resultSet.getString(1)));  // url column
+                urls.add(new URL(resultSet.getString(2)));  // url column
             }
 
             // check list or URLs
@@ -131,9 +129,9 @@ public class CrawlerTest {
             URL twelfth = new URL("https://accounts.google.com/ServiceLogin?hl=en&continue=http://www.google.co.uk/");
             URL twentieth = new URL("http://www.google.co.uk/intl/en/policies/privacy/");
 
-            assertTrue(urls.get(2).equals(third));
-            assertTrue(urls.get(2).equals(twelfth));
-            assertTrue(urls.get(2).equals(twentieth));
+            assertTrue(urls.get(1).equals(third));
+            assertTrue(urls.get(10).equals(twelfth));
+            assertTrue(urls.get(19).equals(twentieth));
 
             // clean database and close connection
             if (resultSet != null) resultSet.close();
