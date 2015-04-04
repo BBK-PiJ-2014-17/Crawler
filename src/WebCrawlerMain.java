@@ -39,7 +39,7 @@ public class WebCrawlerMain {
             String mainTable = "WC_URL";
             String stagingTable = "WC_URL_STAGING";
             //connection.createStatement().execute("drop table WC_URL");
-            connection.createStatement().execute("create table WC_URL(priority int, url varchar(20))");
+            connection.createStatement().execute("create table WC_URL(priority int, url varchar(2084))");   // max url length
 
             // crawl web address
             wc.crawl(new URL("http://www.google.co.uk/"), connection, mainTable, 3);
@@ -60,7 +60,8 @@ public class WebCrawlerMain {
             while(resultSet.next()) {
                 System.out.println("");
                 for (int i = 1; i <= columnCount; i++)
-                    System.out.format("%20s", resultSet.getString(i) + " | ");
+                    System.out.print(resultSet.getString(i) + " | ");
+                    //System.out.format("%20s", resultSet.getString(i) + " | ");
             }
 
             // clean database and close connection

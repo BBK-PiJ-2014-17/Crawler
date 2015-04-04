@@ -44,8 +44,6 @@ public class WebCrawler implements Crawler {
         try {
             URL myURL = webUrl;
             InputStream inputStream = myURL.openStream();
-            InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-            BufferedReader in = new BufferedReader(inputStreamReader);
 
             // find anchors '<a'
             // avoid script tags
@@ -113,84 +111,50 @@ public class WebCrawler implements Crawler {
 
                                 if (attribute.length() > 3) {
 
-                                    System.out.println(attribute.substring(0,3));
-                                    System.out.println(attribute.substring(4, attribute.length() - 1));
+                                    if (attribute.substring(0,4).equals("href")) {
+                                        href = attribute.substring(6, attribute.length() - 1);
 
-                                    if (attribute.substring(0,4).equals("href"))
-                                        href = attribute.substring(4, attribute.length() - 1);
+                                        // construct URL from URL class using base and relative
+                                        // add base to any relative urls
+                                        if (href.substring(0, 1).equals("/")) {
+                                            if (myURL.toString().substring(myURL.toString().length() - 1, myURL.toString().length()).equals("/")) {
+                                                href = myURL.toString() + href.substring(1, href.length());
+                                            } else {
+                                                href = myURL.toString() + href;
+                                            }
+                                        }
+
+                                        // add link to db
+                                        db.createStatement().execute("insert into WC_URL values "
+                                                                    + "(0, '"
+                                                                    + href
+                                                                    + "')");
+
+                                    }
 
                                 }
 
                             }
 
-
-                            /*
-                                // is anchor, get href
-                                while(true) {
-
-                                    // scan attributes
-                                    if (reader.skipSpace(inputStream, 'h') != Character.MIN_VALUE) {
-                                        // next character not FORWARD_SLASH, continue
-                                        continue;
-                                    } else {
-                                        // href attribute found
-                                        if (reader.readString(inputStream, QUOTES, CLOSE_TAG).equals("ref="))
-                                            break;
-                                    }
-
-                                }
-*/
-                                // read href
-                            href = reader.readString(inputStream, QUOTES, CLOSE_TAG);
-
-                        } //else {
-
-                            // scan to closing bracket
-                            //reader.readUntil(inputStream, CLOSE_TAG, Character.MIN_VALUE);
-
-                        //}
+                        }
 
                         sb.append("" + CLOSE_TAG);
 
                     }
 
-                    System.out.println(sb.toString());
-
-                    //char c = Character.MAX_VALUE;
-
-                    //while(c != Character.MIN_VALUE) {
-
-                      //  c = reader.skipSpace(inputStream, '>');
-
-                    //}
-
-                    // check if anchor
-                    //if (reader.skipSpace(inputStream, '>') == 'a') {
-                        //StringBuilder sb = new StringBuilder("<a ");
-                        //sb.append(reader.readString(inputStream, '>', '<'));
-                        //System.out.println(sb.toString());
-                        //break;
-                    //}
                 } else {
 
                     break;
 
                 }
 
-                //break;
-
             }
-/*
-
-            String inputLine;
-            while ((inputLine = in.readLine()) != null)
-                System.out.println(inputLine);
-            in.close();
-*/
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
             e.printStackTrace();
         }
 
