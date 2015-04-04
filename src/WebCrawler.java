@@ -8,9 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,121 +30,152 @@ public class WebCrawler implements Crawler {
 
         /*
             HTML tag structure assumed to be:
-            <tag class="value"></tag>
-
-            or
-
-            </tag>
+            <tag class="value"></tag> or </tag>
          */
 
+        // setup reader object
         Reader reader = new HTMLread();
 
+        // flags for controlling crawl depth
+        int curDepth = 0, maxDepth = depth;
+
         try {
-            URL myURL = webUrl;
-            InputStream inputStream = myURL.openStream();
 
-            // find anchors '<a'
-            // avoid script tags
+            // urls to crawl
+            URL baseURL = webUrl, curURL;
 
-            while(true) {
+            // add base url to table
+            db.createStatement().execute("insert into WC_URL values "
+                                            + "("
+                                            + curDepth
+                                            + ", '"
+                                            + baseURL.toString()
+                                            + "')");
 
-                // 1. find opening tag
-                if (reader.readUntil(inputStream, OPEN_TAG, CLOSE_TAG)) {
+            // get URL and start crawl. Current depth zero, baseURL to be selected first
+            while (curDepth < maxDepth) {
 
-                    //StringBuilder sb = new StringBuilder("" + OPEN_TAG);
-                    StringBuilder sb = new StringBuilder();
+                // get URL query
+                String sql = "select * from "
+                        + "WC_URL "
+                        + "where priority = "
+                        + curDepth;
 
-                    //2. skip whitespace until character read or closing tag found
-                    sb.append(reader.skipSpace(inputStream, CLOSE_TAG));    // single tag check?
+                // get URL execute
+                Statement statement = db.createStatement();
+                ResultSet resultSet = statement.executeQuery(sql);
 
-                    // 3. read tag until next whitespace or closing tag
-                    String wholeTag = reader.readString(inputStream, CLOSE_TAG, Character.MIN_VALUE);
-                    sb.append(wholeTag);
+                // for each url found
+                while(resultSet.next()) {
 
-                    // split string into array of attributes
-                    //List<String> split = new ArrayList<String>(Arrays.asList(sb.toString().split("\\s+")));
-                    String[] split = sb.toString().split("\\s+"); // regex split on consecutive spaces
+                    // set url and read into inputStream
+                    curURL = new URL(resultSet.getString(2));
+                    InputStream inputStream = curURL.openStream();
 
-                    // word tag is element
-                    String element = split[0];
+                    // read inputStream
+                    while(true) {
 
-                    // anchor always goes '<a ', space
-                    // end tag reached before space, tag is not an anchor
-                    if (element == null) {
-                        continue;
-                    } else {
-                        // element candidate for anchor
-                        //sb.append(element);
+                        // 1. find an opening tag
+                        if (reader.readUntil(inputStream, OPEN_TAG, CLOSE_TAG)) {
 
-                        // need check on script before anchor because otherwise continuing could find '<', '>' chars out of
-                        // html context
-                        // 4. check if script element, contains '<', '>' in wrong context
-                        if (element.equals("script")){
+                            StringBuilder sb = new StringBuilder();
 
-                            // scan until closing </script> tag
-                            while(true) {
+                            //2. skip whitespace until character read or closing tag found
+                            sb.append(reader.skipSpace(inputStream, CLOSE_TAG));    // single tag check?
 
-                                // look for consecutive '<' and '/'
-                                if (reader.readUntil(inputStream, OPEN_TAG, Character.MIN_VALUE)) {
-                                    if (reader.skipSpace(inputStream, FORWARD_SLASH) != Character.MIN_VALUE) {
-                                        // next character not FORWARD_SLASH, continue
-                                        continue;
-                                    } else {
-                                        // sequence '</' found, check is script tag
-                                        if (reader.readString(inputStream, CLOSE_TAG, OPEN_TAG).equals("script"))
-                                            break;
+                            // 3. read tag until next whitespace or closing tag
+                            String wholeTag = reader.readString(inputStream, CLOSE_TAG, Character.MIN_VALUE);
+                            sb.append(wholeTag);
 
-                                    }
+                            // split string into array of attributes
+                            String[] split = sb.toString().split("\\s+"); // regex split on consecutive spaces
 
+                            // word tag is element
+                            String element = split[0];
 
-                                }
+                            // anchor always goes '<a ', space
+                            // end tag reached before space, tag is not an anchor
+                            if (element == null) {
+                                continue;
+                            } else {
+                                // element candidate for anchor
+                                //sb.append(element);
 
-                            }
+                                // need check on script before anchor because otherwise continuing could find '<', '>' chars out of
+                                // html context
+                                // 4. check if script element, contains '<', '>' in wrong context
+                                if (element.equals("script")){
 
-                        } else if (element.equals("a")){
+                                    // scan until closing </script> tag
+                                    while(true) {
 
-                            String href;
-
-                            for (String attribute : split) {
-
-                                if (attribute.length() > 3) {
-
-                                    if (attribute.substring(0,4).equals("href")) {
-                                        href = attribute.substring(6, attribute.length() - 1);
-
-                                        // construct URL from URL class using base and relative
-                                        // add base to any relative urls
-                                        if (href.substring(0, 1).equals("/")) {
-                                            if (myURL.toString().substring(myURL.toString().length() - 1, myURL.toString().length()).equals("/")) {
-                                                href = myURL.toString() + href.substring(1, href.length());
+                                        // look for consecutive '<' and '/'
+                                        if (reader.readUntil(inputStream, OPEN_TAG, Character.MIN_VALUE)) {
+                                            if (reader.skipSpace(inputStream, FORWARD_SLASH) != Character.MIN_VALUE) {
+                                                // next character not FORWARD_SLASH, continue
+                                                continue;
                                             } else {
-                                                href = myURL.toString() + href;
+                                                // sequence '</' found, check is script tag
+                                                if (reader.readString(inputStream, CLOSE_TAG, OPEN_TAG).equals("script"))
+                                                    break;
+
                                             }
+
+
                                         }
 
-                                        // add link to db
-                                        db.createStatement().execute("insert into WC_URL values "
-                                                                    + "(0, '"
-                                                                    + href
-                                                                    + "')");
+                                    }
+
+                                } else if (element.equals("a")){
+
+                                    String href;
+
+                                    for (String attribute : split) {
+
+                                        if (attribute.length() > 3) {
+
+                                            if (attribute.substring(0,4).equals("href")) {
+                                                href = attribute.substring(6, attribute.length() - 1);
+
+                                                // construct URL from URL class using base and relative
+                                                // add base to any relative urls
+                                                if (href.substring(0, 1).equals("/")) {
+                                                    if (baseURL.toString().substring(baseURL.toString().length() - 1, baseURL.toString().length()).equals("/")) {
+                                                        href = baseURL.toString() + href.substring(1, href.length());
+                                                    } else {
+                                                        href = baseURL.toString() + href;
+                                                    }
+                                                }
+
+                                                // add link to db
+                                                db.createStatement().execute("insert into WC_URL values "
+                                                        + "("
+                                                        + (curDepth + 1)
+                                                        + ", '"
+                                                        + href
+                                                        + "')");
+
+                                            }
+
+                                        }
 
                                     }
 
                                 }
 
                             }
+
+                        } else {
+
+                            break;
 
                         }
 
-                        sb.append("" + CLOSE_TAG);
-
                     }
-
-                } else {
-
-                    break;
-
+                    
                 }
+
+                curDepth++;
 
             }
 
