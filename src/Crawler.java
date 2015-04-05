@@ -8,6 +8,8 @@ public interface Crawler {
 
     void crawl(URL webUrl,Connection db, String table, int depth);
 
-    boolean search();
+    default boolean search(URL webUrl) {
+        return true;
+    }
 
 }

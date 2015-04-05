@@ -108,7 +108,9 @@ public class CrawlerTest {
 
             // 1. check count = 21
             String sql = "select count(*) from "
-                            + MAIN;
+                            + MAIN
+                            + " where priority = "
+                            + 1;
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sql);
             resultSet.next();
@@ -116,7 +118,9 @@ public class CrawlerTest {
 
             // 2. spot check results
             sql = "select * from "
-                    + MAIN;
+                    + MAIN
+                    + " where priority = "
+                    + 1;
 
             resultSet = statement.executeQuery(sql);
             // push URLs into list

@@ -1,17 +1,10 @@
 //package com.pij.crawler;
 
-import javax.lang.model.element.VariableElement;
-import javax.swing.text.ChangedCharSetException;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Created by Basil on 28/03/2015.
@@ -36,29 +29,40 @@ public class WebCrawler implements Crawler {
         // setup reader object
         Reader reader = new HTMLread();
 
+        // setup staging table
+        String mainTable = table;
+        String stagingTable = table + "_STAGING";
+
+
         // flags for controlling crawl depth
         int curDepth = 0, maxDepth = depth;
 
         try {
 
+            // create staging table
+            db.createStatement().execute("create table"
+                                            + stagingTable
+                                            + "(priority int, url varchar(2084))");   // max url length
+
             // urls to crawl
             URL baseURL = webUrl, curURL;
 
-            // add base url to table
-            db.createStatement().execute("insert into WC_URL values "
-                                            + "("
+            // add base url to staging table
+            db.createStatement().execute("insert into "
+                                            + stagingTable
+                                            + " values ("
                                             + curDepth
                                             + ", '"
                                             + baseURL.toString()
                                             + "')");
 
             // get URL and start crawl. Current depth zero, baseURL to be selected first
-            while (curDepth < maxDepth) {
+            while (curDepth < maxDepth) {   // include max links
 
                 // get URL query
                 String sql = "select * from "
-                        + "WC_URL "
-                        + "where priority = "
+                        + stagingTable
+                        + " where priority = "
                         + curDepth;
 
                 // get URL execute
@@ -148,12 +152,13 @@ public class WebCrawler implements Crawler {
                                                 }
 
                                                 // add link to db
-                                                db.createStatement().execute("insert into WC_URL values "
-                                                        + "("
-                                                        + (curDepth + 1)
-                                                        + ", '"
-                                                        + href
-                                                        + "')");
+                                                db.createStatement().execute("insert into"
+                                                                                + stagingTable
+                                                                                + " values ("
+                                                                                + (curDepth + 1)
+                                                                                + ", '"
+                                                                                + href
+                                                                                + "')");
 
                                             }
 
@@ -169,6 +174,32 @@ public class WebCrawler implements Crawler {
 
                             break;
 
+                        }
+
+                    }
+
+                    // if true, current link stored in main table
+                    if(search(curURL)) {
+
+                        // if not duplicate
+                        sql = "select count(*) from "
+                                + mainTable
+                                + " where url = "
+                                + curURL;
+
+                        statement = db.createStatement();
+                        resultSet = statement.executeQuery(sql);
+
+                        resultSet.next();
+                        if(resultSet.getInt(1) > 0) {
+                            // add link to db
+                            db.createStatement().execute("insert into"
+                                    + stagingTable
+                                    + " values ("
+                                    + (curDepth + 1)
+                                    + ", '"
+                                    + curURL
+                                    + "')");
                         }
 
                     }
@@ -190,7 +221,7 @@ public class WebCrawler implements Crawler {
     }
 
     @Override
-    public boolean search() {
+    public boolean search(URL webUrl) {
         return false;
     }
 
