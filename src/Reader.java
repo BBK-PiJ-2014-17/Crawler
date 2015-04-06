@@ -2,6 +2,12 @@ import java.io.InputStream;
 
 /**
  * Created by Basil on 29/03/2015.
+ *
+ * The <code>Reader</code> interface contains methods for parsing HTML commands from a stream
+ * and constructing strings from the information read.
+ *
+ * All methods in this interface work directly with an instance of an InputStream.
+ *
  */
 public interface Reader {
 
