@@ -222,7 +222,7 @@ public class WebCrawler implements Crawler {
 
     @Override
     public boolean search(URL webUrl) {
-        return false;
+        return true;
     }
 
 }

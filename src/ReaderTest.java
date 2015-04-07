@@ -2,35 +2,43 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import javax.print.DocFlavor;
-import java.io.BufferedReader;
-import java.io.IOException;
+import static org.junit.Assert.assertTrue;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-/*
-    - does inputStream to string consume inputStream
-    - check case
-    - check multiple types of whitespace
+/**
+ * <code>ReaderTest</code>
+ *
+ * A set of test for the HTMLread implementation of the Reader interface.
+ *
+ * For the purpose of these tests, the URL "http://www.google.co.uk/" has been chosen. The expected opening
+ * of this URL is as follows:
+ *
+ * <code><!doctype html><html itemscope="" itemtype="http://schema.org/WebPage" lang="en-GB"><head><meta...</code>
+ *
+ * NB: JUnit tests only compile with Java 6 / bytecode target 1.6, whilst main application runs Java 8.
+ *
  */
-
 public class ReaderTest {
 
-    private HTMLread reader;
-    private InputStream inputStream;
+    private HTMLread reader;            // reader object
+    private InputStream inputStream;    // inputStream object
 
+    /**
+     * Setup the reader and inputStream objects for testing.
+     *
+     * @throws Exception
+     */
     @Before
     public void setUp() throws Exception {
 
-        reader = new HTMLread();
+        reader = new HTMLread();    // use the HTMLRead implementation
 
+        // MalformedURLException handling
         try {
+
+            // setup test URL and inputStream object
             URL testURl = new URL("http://www.google.co.uk/");
             inputStream = testURl.openStream();
 
@@ -42,17 +50,18 @@ public class ReaderTest {
 
     @After
     public void tearDown() throws Exception {
-
+        // close inputStream
+        inputStream.close();
     }
 
-    @Ignore
+    /**
+     * <code>testReadUntil</code> tests method {@link HTMLread#readUntil(InputStream, char, char) readUntil()}.
+     *
+     * @throws Exception
+     */
+    @Test
     public void testReadUntil() throws Exception {
 
-        // check case
-
-        /*
-            ** expected beginning of inputStream = '<!doctype html><html itemscope="" itemtype="http://schema.org/WebPage" lang="en-GB"><head><meta...'
-         */
         char ch1, ch2;                          // char arguments
         int s = 3;                              // inputStream snippet length for testing
         byte[] b;                               // byte array from inputStream to test
@@ -93,12 +102,14 @@ public class ReaderTest {
 
     }
 
-    @Ignore
+    /**
+     * <code>testSkipSpace</code> tests method {@link HTMLread#skipSpace(InputStream, char) skipSpace()}.
+     *
+     * @throws Exception
+     */
+    @Test
     public void testSkipSpace() throws Exception {
 
-        /*
-            ** expected beginning of inputStream = '<!doctype html><html itemscope="" itemtype="http://schema.org/WebPage" lang="en-GB"><head><meta...'
-         */
         char ch, expected;                      // input and expected chars
         int s = 3;                              // inputStream snippet length for testing
         byte[] b;                               // byte array from inputStream to test
@@ -143,12 +154,14 @@ public class ReaderTest {
 
     }
 
+    /**
+     * <code>testReadString</code> tests method {@link HTMLread#readString(InputStream, char, char) readString()}.
+     *
+     * @throws Exception
+     */
     @Test
     public void testReadString() throws Exception {
 
-        /*
-            ** expected beginning of inputStream = '<!doctype html><html itemscope="" itemtype="http://schema.org/WebPage" lang="en-GB"><head><meta...'
-         */
         char ch1, ch2;                                      // char arguments
         int s = 3;                                          // inputStream snippet length for testing
         byte[] b;                                           // byte array from inputStream to test
