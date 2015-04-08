@@ -98,7 +98,7 @@ public class CrawlerTest {
         try {
 
             // crawl web address
-            wc.crawl(new URL("http://www.google.co.uk/"), connection, MAIN, 1);
+            wc.crawl(new URL("http://www.google.co.uk/"), connection, MAIN, 1, 1);
 
             // expected number of URLS
             int expected = 21;

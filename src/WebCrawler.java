@@ -19,7 +19,7 @@ public class WebCrawler implements Crawler {
                     QUOTES = '"';
 
     @Override
-    public void crawl(URL webUrl, Connection db, String table, int depth) {
+    public void crawl(URL webUrl, Connection db, String table, int depth, int max) {
 
         /*
             HTML tag structure assumed to be:
