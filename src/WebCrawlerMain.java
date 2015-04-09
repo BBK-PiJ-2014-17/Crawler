@@ -39,10 +39,13 @@ public class WebCrawlerMain {
             String mainTable = "WC_URL";
             String stagingTable = "WC_URL_STAGING";
             //connection.createStatement().execute("drop table WC_URL");
+            //connection.createStatement().execute("drop table WC_URL_STAGING");
             connection.createStatement().execute("create table WC_URL(priority int, url varchar(2084))");   // max url length
 
             // crawl web address
-            wc.crawl(new URL("http://www.google.co.uk/"), connection, mainTable, 3);
+            //wc.crawl(new URL("http://www.google.co.uk/"), connection, mainTable, 1, 1);
+            //wc.crawl(new URL("http://tfl.gov.uk/"), connection, mainTable, 2, 1);
+            wc.crawl(new URL("https://www.facebook.com/"), connection, mainTable, 2, 1);
 
             // check results
             String sql = "select * from WC_URL";

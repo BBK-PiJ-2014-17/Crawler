@@ -1,5 +1,3 @@
-//package com.pij.crawler;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -8,6 +6,8 @@ import java.sql.*;
 
 /**
  * Created by Basil on 28/03/2015.
+ *
+ * This is an implementation of the interface <code>Crawler</code>.
  */
 public class WebCrawler implements Crawler {
 
@@ -18,131 +18,200 @@ public class WebCrawler implements Crawler {
                     EQUALS = '=',
                     QUOTES = '"';
 
+    /**
+     * <code>crawl()</code>
+     * {@inheritDoc}
+     *
+     * This implementation scans URLs for the HTML anchor tag <a></a> and locates the 'href'
+     * attribute. All HTML tags are assumed to be of the following forms:
+     *
+     * <element attribute="value"></element>
+     *
+     *      or
+     *
+     * </element>
+     *
+     *
+     *
+     *
+     * @param webUrl    a base URL from which to start the crawl
+     * @param db        a connection to a database to store the results
+     * @param table     the database table to store results in
+     * @param depth     the maximum depth from the base URL the crawl should go
+     * @param max       the maximum number of links that should be processed
+     */
     @Override
     public void crawl(URL webUrl, Connection db, String table, int depth, int max) {
-
-        /*
-            HTML tag structure assumed to be:
-            <tag class="value"></tag> or </tag>
-         */
 
         // setup reader object
         Reader reader = new HTMLread();
 
-        // setup staging table
+        // setup database table names
         String mainTable = table;
         String stagingTable = table + "_STAGING";
 
+        // initialise database querying elements
+        ResultSet resultSet = null;
+        Statement statement = null;
+        String sql;
 
-        // flags for controlling crawl depth
-        int curDepth = 0, maxDepth = depth;
+        // initialise URLs to crawl
+        URL baseURL = webUrl, curURL;
 
+        // flags for controlling crawl duration
+        int curDepth = 0, maxDepth = depth, curLinks = 0, maxLinks = max;
+
+        // MalformedURLException, IOException and SQLException handling
         try {
 
-            // create staging table
-            db.createStatement().execute("create table"
-                                            + stagingTable
-                                            + "(priority int, url varchar(2084))");   // max url length
+            // 1. create temporary staging table for initial scan
+            sql =   "create table "
+                    + stagingTable
+                    + "(priority int, url varchar(2084))";  // max url length
+            db.createStatement().execute(sql);
 
-            // urls to crawl
-            URL baseURL = webUrl, curURL;
+            // 2. add base url to staging table with priority 0 (curDepth)
+            sql =   "insert into "
+                    + stagingTable
+                    + " values ("
+                    + curDepth
+                    + ", '"
+                    + baseURL.toString()
+                    + "')";
+            db.createStatement().execute(sql);
 
-            // add base url to staging table
-            db.createStatement().execute("insert into "
-                                            + stagingTable
-                                            + " values ("
-                                            + curDepth
-                                            + ", '"
-                                            + baseURL.toString()
-                                            + "')");
-
+            // 3. start crawl
+            // loop until crawler has parsed the maximum number of links, or reached the maximum depth.
             // get URL and start crawl. Current depth zero, baseURL to be selected first
-            while (curDepth < maxDepth) {   // include max links
+            while (curDepth < maxDepth && curLinks < maxLinks) {
 
-                // get URL query
-                String sql = "select * from "
-                        + stagingTable
-                        + " where priority = "
-                        + curDepth;
+                // on each iteration, get all URLs from the staging table with the current priority level.
+                // For each URL, scan for links and store these with priority incremented by 1.
 
-                // get URL execute
-                Statement statement = db.createStatement();
-                ResultSet resultSet = statement.executeQuery(sql);
+                try {
+                    // 4. get URLs
+                    sql = "select * from "
+                            + stagingTable
+                            + " where priority = "
+                            + curDepth;
+                    statement = db.createStatement();
+                    resultSet = statement.executeQuery(sql);
+                } catch (SQLException e) {
+                    System.out.println(e.getMessage());
+                    System.out.println(sql);
+                    continue;
+                }
 
-                // for each url found
+                // 5. for each URL of the current priority
+                // carry out scan for links
                 while(resultSet.next()) {
 
-                    // set url and read into inputStream
-                    curURL = new URL(resultSet.getString(2));
-                    InputStream inputStream = curURL.openStream();
+                    // 6. set url and read into inputStream
+                    curURL = null;
+                    String s = null;
+                    try {
+                        s = resultSet.getString(2);
+                        curURL = new URL(s);       // second column in table
+                    } catch (MalformedURLException e) {
+                        System.out.println(s);
+                        System.out.println(e.getMessage());
+                        continue;
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
 
-                    // read inputStream
+                    InputStream inputStream = null;
+                    try {
+                        inputStream = curURL.openStream();
+                    } catch (IOException e) {
+                        System.out.println(curURL.toString());
+                        System.out.println(e.getMessage());
+                        continue;
+                    }
+
+                    // 7. open and read inputStream
+                    // loop until no remaining closing tags found, i.e. end of HTML.
                     while(true) {
 
-                        // 1. find an opening tag
+                        // for each inputStream, the loop continues until all tags read
+                        // on each cycle, the next opening tag is found and the element is
+                        // compared to the elements <a> and <script>.
+                        // if <a> is found, the link is stored.
+                        // if <script> is found, the inputStream is read until the matching closing tag
+                        // is found. This is to avoid diamond brackets outside of HTML context.
+                        // if element that does not match either of these is found, the inputStream continues.
+
+                        // 8. find the next opening tag
+                        // e.g. '<'
                         if (reader.readUntil(inputStream, OPEN_TAG, CLOSE_TAG)) {
 
                             StringBuilder sb = new StringBuilder();
 
-                            //2. skip whitespace until character read or closing tag found
-                            sb.append(reader.skipSpace(inputStream, CLOSE_TAG));    // single tag check?
+                            // 9. skip any whitespace until character read or closing tag found
+                            // e.g. 'a'
+                            sb.append(reader.skipSpace(inputStream, CLOSE_TAG));    // store first non-whitespace
+                                                                                    // character found
 
-                            // 3. read tag until next whitespace or closing tag
-                            String wholeTag = reader.readString(inputStream, CLOSE_TAG, Character.MIN_VALUE);
-                            sb.append(wholeTag);
+                            // 10. read element until closing tag
+                            // e.g. 'a class="1" href="www.example.co.uk">'
+                            sb.append(reader.readString(inputStream, CLOSE_TAG, Character.MIN_VALUE));  // store element
 
-                            // split string into array of attributes
+                            // 11. split element into array of attributes
+                            // e.g. {'a', 'class="1"', 'href="www.example.co.uk'}
                             String[] split = sb.toString().split("\\s+"); // regex split on consecutive spaces
 
-                            // word tag is element
+                            // 12. element tag is first in split
+                            // e.g. 'a'
                             String element = split[0];
 
-                            // anchor always goes '<a ', space
-                            // end tag reached before space, tag is not an anchor
-                            if (element == null) {
-                                continue;
-                            } else {
-                                // element candidate for anchor
-                                //sb.append(element);
+                            // 13. check if element equals <script> tag
+                            if (element.equals("script")) {
 
-                                // need check on script before anchor because otherwise continuing could find '<', '>' chars out of
-                                // html context
-                                // 4. check if script element, contains '<', '>' in wrong context
-                                if (element.equals("script")){
+                                // if the element is the <script> element, the following lines of data must
+                                // be skipped to avoid parsing diamond brackets in a non-HTML context
 
-                                    // scan until closing </script> tag
-                                    while(true) {
+                                // 14. consume inputStream until closing </script> tag
+                                while(true) {
 
-                                        // look for consecutive '<' and '/'
-                                        if (reader.readUntil(inputStream, OPEN_TAG, Character.MIN_VALUE)) {
-                                            if (reader.skipSpace(inputStream, FORWARD_SLASH) != Character.MIN_VALUE) {
-                                                // next character not FORWARD_SLASH, continue
-                                                continue;
-                                            } else {
-                                                // sequence '</' found, check is script tag
-                                                if (reader.readString(inputStream, CLOSE_TAG, OPEN_TAG).equals("script"))
-                                                    break;
-
-                                            }
-
-
+                                    // 15. closing tag signalled by consecutive '<' and '/'
+                                    if (reader.readUntil(inputStream, OPEN_TAG, Character.MIN_VALUE)) {
+                                        if (reader.skipSpace(inputStream, FORWARD_SLASH) != Character.MIN_VALUE) {
+                                            // next character not FORWARD_SLASH, continue
+                                            continue;   // continue loop
+                                        } else {
+                                            // sequence '</' found, check is script tag
+                                            if (reader.readString(inputStream, CLOSE_TAG, OPEN_TAG).equals("script"))
+                                                break;  // break loop
                                         }
 
                                     }
 
-                                } else if (element.equals("a")){
+                                }
 
-                                    String href;
+                            // 16. check if element equals <a> tag
+                            } else if (element.equals("a")) {
 
-                                    for (String attribute : split) {
+                                // if yes, an anchor has been found, scan the attributes for the link
 
-                                        if (attribute.length() > 3) {
+                                String href;    // link to be found
 
+                                // 17. for each attribute found in the anchor tag
+                                for (String attribute : split) {
+
+                                    // 18. check the length could possibly be href to avoid
+                                    // error when constructing substring
+                                    if (attribute.length() > 3) {
+
+                                        try {
+
+                                            // 19. check is href
                                             if (attribute.substring(0,4).equals("href")) {
+
+                                                // 20. extract link from href
+                                                // e.g. href="www.example.co.uk" -> www.example.co.uk
                                                 href = attribute.substring(6, attribute.length() - 1);
 
-                                                // construct URL from URL class using base and relative
-                                                // add base to any relative urls
+                                                // 21. add base url to any relative urls
                                                 if (href.substring(0, 1).equals("/")) {
                                                     if (baseURL.toString().substring(baseURL.toString().length() - 1, baseURL.toString().length()).equals("/")) {
                                                         href = baseURL.toString() + href.substring(1, href.length());
@@ -151,17 +220,28 @@ public class WebCrawler implements Crawler {
                                                     }
                                                 }
 
-                                                // add link to db
-                                                db.createStatement().execute("insert into"
-                                                                                + stagingTable
-                                                                                + " values ("
-                                                                                + (curDepth + 1)
-                                                                                + ", '"
-                                                                                + href
-                                                                                + "')");
+                                                try {
+                                                    // 22. add link to temporary staging database table
+                                                    sql = "insert into "
+                                                            + stagingTable
+                                                            + " values ("
+                                                            + (curDepth + 1)
+                                                            + ", '"
+                                                            + href
+                                                            + "')";
+                                                    db.createStatement().execute(sql);
+                                                } catch (SQLException e) {
+                                                    System.out.println(e.getMessage());
+                                                    System.out.println(sql);
+                                                    continue;
+                                                }
 
                                             }
 
+                                        } catch (IndexOutOfBoundsException e) {
+                                            System.out.println(e.getMessage());
+                                            System.out.println(attribute);
+                                            continue;
                                         }
 
                                     }
@@ -171,49 +251,100 @@ public class WebCrawler implements Crawler {
                             }
 
                         } else {
-
-                            break;
-
+                            break;  // no remaining tags found, break loop
                         }
 
                     }
 
-                    // if true, current link stored in main table
+                    // 23. conduct search on current URL before storing in main database table
                     if(search(curURL)) {
 
-                        // if not duplicate
-                        sql = "select count(*) from "
-                                + mainTable
-                                + " where url = "
-                                + curURL;
+                        // if search criteria met..
+                        ResultSet dupResultSet = null;
 
-                        statement = db.createStatement();
-                        resultSet = statement.executeQuery(sql);
-
-                        resultSet.next();
-                        if(resultSet.getInt(1) > 0) {
-                            // add link to db
-                            db.createStatement().execute("insert into"
-                                    + stagingTable
-                                    + " values ("
-                                    + (curDepth + 1)
-                                    + ", '"
+                        try {
+                            // 24. check if the link exists in the table already
+                            sql = "select count(*) from "
+                                    + mainTable
+                                    + " where url = '"
                                     + curURL
-                                    + "')");
+                                    + "'";
+                            Statement dupStatement = db.createStatement();
+                            dupResultSet = dupStatement.executeQuery(sql);
+                        } catch (SQLException e) {
+                            System.out.println(e.getMessage());
+                            System.out.println(sql);
+                            continue;
+                        }
+
+                        // 25. if no record found, add to main table
+                        dupResultSet.next();
+                        if(!(dupResultSet.getInt(1) > 0)) {
+                            // add link to db
+
+                            try {
+                                sql = "insert into "
+                                        + mainTable
+                                        + " values ("
+                                        + (curDepth + 1)
+                                        + ", '"
+                                        + curURL
+                                        + "')";
+                                db.createStatement().execute(sql);
+                            } catch (SQLException e) {
+                                System.out.println(e.getMessage());
+                                System.out.println(sql);
+                                continue;
+                            }
+
                         }
 
                     }
                     
                 }
 
+                // 26. all links at current depth visited, increment to next level
                 curDepth++;
 
             }
 
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            /**/
+            ResultSetMetaData resultSetMetaData = null;
+
+            try {
+                // check results
+                sql = "select * from WC_URL_STAGING";
+                statement = db.createStatement();
+                resultSet = statement.executeQuery(sql);
+                resultSetMetaData = resultSet.getMetaData();
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+                System.out.println(sql);
+            }
+
+
+            int columnCount = resultSetMetaData.getColumnCount();
+
+            // print column headers
+            for (int i = 1; i <= columnCount; i++)
+                System.out.format("%20s", resultSetMetaData.getColumnName(i) + " | ");
+
+            // print table
+            while(resultSet.next()) {
+                System.out.println("");
+                for (int i = 1; i <= columnCount; i++)
+                    System.out.print(resultSet.getString(i) + " | ");
+            }
+
+            System.out.println();
+
+            /**/
+
+            // 27. clean database and close connection
+            if (resultSet != null) resultSet.close();
+            if (statement != null) statement.close();
+            db.createStatement().execute("drop table " + stagingTable);
+
         } catch (SQLException e) {
             e.printStackTrace();
         }

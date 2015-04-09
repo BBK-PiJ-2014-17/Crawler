@@ -5,8 +5,6 @@ import java.io.InputStream;
  * Created by Basil on 28/03/2015.
  *
  * This is an implementation of the interface <code>Reader</code>.
- *
- *
  */
 public class HTMLread implements Reader {
 
