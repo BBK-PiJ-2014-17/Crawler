@@ -1,3 +1,4 @@
+import javax.management.StandardEmitterMBean;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -79,6 +80,7 @@ public class WebCrawler implements Crawler {
                 System.out.println(e.getMessage());
             }
 
+            // 2. add base url to staging table with priority 0 (curDepth)
             sqlAddRecordToUrlTable(stagingTable, curDepth, baseURL.toString());
 
             // 3. start crawl
@@ -89,7 +91,7 @@ public class WebCrawler implements Crawler {
                 // on each iteration, get all URLs from the staging table with the current priority level.
                 // For each URL, scan for links and store these with priority incremented by 1.
 
-                try {
+                /*try {
                     // 4. get URLs
                     sql = "select * from "
                             + stagingTable
@@ -102,7 +104,10 @@ public class WebCrawler implements Crawler {
                                         + stagingTable + ".");
                     System.out.println(e.getMessage());
                     continue;
-                }
+                }*/
+
+                // 4. get URLs
+                resultSet = sqlGetUrlsFromTable(stagingTable, curDepth);
 
                 try {
 
@@ -392,6 +397,30 @@ public class WebCrawler implements Crawler {
             System.out.println(e.getMessage());
         }
 
+    }
+
+    private ResultSet sqlGetUrlsFromTable(String table, int depth) {
+
+        String sql;
+        Statement statement;
+        ResultSet resultSet = null;
+
+        sql = "select * from "
+                + table
+                + " where priority = "
+                + depth;
+
+        try {
+            statement = db.createStatement();
+            resultSet = statement.executeQuery(sql);
+        } catch (SQLException e) {
+            System.out.println("Unable to retrieve URLs with priority " + depth + ", from "
+                    + table + ".");
+            System.out.println(e.getMessage());
+            return null;
+        }
+
+        return resultSet;
 
     }
 }
