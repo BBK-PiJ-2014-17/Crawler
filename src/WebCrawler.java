@@ -18,6 +18,8 @@ public class WebCrawler implements Crawler {
                     EQUALS = '=',
                     QUOTES = '"';
 
+    Connection db;
+
     /**
      * <code>crawl()</code>
      * {@inheritDoc}
@@ -42,6 +44,8 @@ public class WebCrawler implements Crawler {
      */
     @Override
     public void crawl(URL webUrl, Connection db, String table, int depth, int max) {
+
+        this.db = db;
 
         // setup reader object
         Reader reader = new HTMLread();
@@ -75,21 +79,7 @@ public class WebCrawler implements Crawler {
                 System.out.println(e.getMessage());
             }
 
-            try {
-                // 2. add base url to staging table with priority 0 (curDepth)
-                sql =   "insert into "
-                        + stagingTable
-                        + " values ("
-                        + curDepth
-                        + ", '"
-                        + baseURL.toString()
-                        + "')";
-                db.createStatement().execute(sql);
-            } catch (SQLException e) {
-                System.out.println("Unable to add URL: '" + baseURL.toString() + "' with priority "
-                                    + curDepth + ", to " + stagingTable+ ".");
-                System.out.println(e.getMessage());
-            }
+            sqlAddRecordToUrlTable(stagingTable, curDepth, baseURL.toString());
 
             // 3. start crawl
             // loop until crawler has parsed the maximum number of links, or reached the maximum depth.
@@ -381,4 +371,27 @@ public class WebCrawler implements Crawler {
         return true;
     }
 
+    /* I N T E R N A L   M E T H O D S */
+    private void sqlAddRecordToUrlTable(String table, int depth, String url) {
+
+        String sql;
+
+        sql =   "insert into "
+                + table
+                + " values ("
+                + depth
+                + ", '"
+                + url
+                + "')";
+
+        try {
+            db.createStatement().execute(sql);
+        } catch (SQLException e) {
+            System.out.println("Unable to add URL: '" + url + "' with priority "
+                    + depth + ", to " + table + ".");
+            System.out.println(e.getMessage());
+        }
+
+
+    }
 }

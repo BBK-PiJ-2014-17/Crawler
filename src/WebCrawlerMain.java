@@ -44,7 +44,7 @@ public class WebCrawlerMain {
 
             // crawl web address
             //wc.crawl(new URL("http://www.google.co.uk/"), connection, mainTable, 1, 1);
-            wc.crawl(new URL("http://tfl.gov.uk/"), connection, mainTable, 1, 10);
+            wc.crawl(new URL("http://tfl.gov.uk/"), connection, mainTable, 1, 1);
             //wc.crawl(new URL("https://www.facebook.com/"), connection, mainTable, 2, 1);
 
             // check results
