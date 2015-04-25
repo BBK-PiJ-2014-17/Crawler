@@ -3,28 +3,38 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 
 /**
  * Created by Basil on 02/04/2015.
+ *
+ * This application demonstrates the use of the WebCrawler class.
+ *
+ * Here, the java Apache Derby database implementation is used, but the WebCrawler class would work with
+ * any SQL database.
+ *
+ * download - https://db.apache.org/derby/releases/release-10.11.1.1.cgi
+ * file     - db-derby-10.11.1.1-lib.zip
+ *
  */
 public class WebCrawlerMain {
 
+    // database setup information
     public static final String DRIVER = "org.apache.derby.jdbc.EmbeddedDriver";
     public static final String JDBC_URL = "jdbc:derby:testdb;create=true";
     private Connection connection;
+
+    // the crawler object
     private Crawler wc;
 
+    // main application
     public static void main(String[] args) {
         new WebCrawlerMain().launch();
     }
 
+    // processing
     private void launch() {
 
         // setup web crawler
@@ -37,9 +47,13 @@ public class WebCrawlerMain {
             connection = DriverManager.getConnection(JDBC_URL);
 
             String mainTable = "WC_URL";
-            String stagingTable = "WC_URL_STAGING";
+
+            /* for testing ONLY. When an error has occurred, a table may need to be dropped manually.
+            //String stagingTable = "WC_URL_STAGING";
             //connection.createStatement().execute("drop table WC_URL");
-            //connection.createStatement().execute("drop table WC_URL_STAGING");
+            //connection.createStatement().execute("drop table WC_URL_STAGING"); */
+
+            // create table for results
             connection.createStatement().execute("create table WC_URL(priority int, url varchar(2084))");   // max url length
 
             // crawl web address
@@ -52,7 +66,6 @@ public class WebCrawlerMain {
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sql);
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-
             int columnCount = resultSetMetaData.getColumnCount();
 
             // print column headers

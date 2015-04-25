@@ -12,8 +12,8 @@ the Crawler section below.
 This application has been developed around the java Apache Derby database implementation. The required library can be
 found at the following location:
 
-https://db.apache.org/derby/releases/release-10.11.1.1.cgi
-/db-derby-10.11.1.1-lib.zip
+download    - https://db.apache.org/derby/releases/release-10.11.1.1.cgi
+file        - /db-derby-10.11.1.1-lib.zip
 
 However, the main WebCrawler implementation should also work with any SQL database that is provided. See the Crawler
 section for details.
