@@ -43,8 +43,8 @@ public class WebCrawlerMain {
             connection.createStatement().execute("create table WC_URL(priority int, url varchar(2084))");   // max url length
 
             // crawl web address
-            //wc.crawl(new URL("http://www.google.co.uk/"), connection, mainTable, 1, 1);
-            wc.crawl(new URL("http://tfl.gov.uk/"), connection, mainTable, 1, 1);
+            wc.crawl(new URL("http://www.google.co.uk/"), connection, mainTable, 2, 20);
+            //wc.crawl(new URL("http://tfl.gov.uk/"), connection, mainTable, 2, 20);
             //wc.crawl(new URL("https://www.facebook.com/"), connection, mainTable, 2, 1);
 
             // check results
