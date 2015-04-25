@@ -48,10 +48,9 @@ public class WebCrawlerMain {
 
             String mainTable = "WC_URL";
 
-            /* for testing ONLY. When an error has occurred, a table may need to be dropped manually.
-            //String stagingTable = "WC_URL_STAGING";
+            /* for testing ONLY. When an error has occurred, a table may need to be dropped manually. */
             //connection.createStatement().execute("drop table WC_URL");
-            //connection.createStatement().execute("drop table WC_URL_STAGING"); */
+            //connection.createStatement().execute("drop table WC_URL_STAGING");
 
             // create table for results
             connection.createStatement().execute("create table WC_URL(priority int, url varchar(2084))");   // max url length

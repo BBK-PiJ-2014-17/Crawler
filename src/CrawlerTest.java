@@ -1,7 +1,6 @@
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.*;
@@ -13,7 +12,7 @@ import static org.junit.Assert.*;
 /**
  * <code>Crawler</code> Tests
  *
- * Initial analysis carried out on URL: http://www.google.co.uk/. Expected first crawl results below
+ * Analysis carried out on URL: http://www.google.co.uk/. Expected first crawl results below
  * , 22 URLs expected.
  *
  *  PRIORITY    |               URL |
@@ -40,7 +39,7 @@ import static org.junit.Assert.*;
  *  1           | http://www.google.co.uk/intl/en/policies/privacy/ |
  *  1           | http://www.google.co.uk/intl/en/policies/terms/ |
  *
- * First set of tests written for depth one
+ * Set of tests written for depth one
  *
  */
 
@@ -98,15 +97,15 @@ public class CrawlerTest {
         try {
 
             // crawl web address
-            wc.crawl(new URL("http://www.google.co.uk/"), connection, MAIN, 1, 1);
+            wc.crawl(new URL("http://www.google.co.uk/"), connection, MAIN, 2, 23);
 
             // expected number of URLS
-            int expected = 21;
+            int expected = 20;
             List<URL> urls = new ArrayList<URL>(expected);
 
             // check results
 
-            // 1. check count = 21
+            // 1. check count = 20
             String sql = "select count(*) from "
                             + MAIN
                             + " where priority = "
@@ -114,6 +113,7 @@ public class CrawlerTest {
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sql);
             resultSet.next();
+            System.out.println(resultSet.getInt(1));
             assertTrue(resultSet.getInt(1) == expected);
 
             // 2. spot check results
@@ -129,13 +129,13 @@ public class CrawlerTest {
             }
 
             // check list or URLs
-            URL third = new URL("http://maps.google.co.uk/maps?hl=en&tab=wl");
-            URL twelfth = new URL("https://accounts.google.com/ServiceLogin?hl=en&continue=http://www.google.co.uk/");
-            URL twentieth = new URL("http://www.google.co.uk/intl/en/policies/privacy/");
+            URL first = new URL("http://maps.google.co.uk/maps?hl=en&tab=wl");
+            URL tenth = new URL("https://accounts.google.com/ServiceLogin?hl=en&continue=http://www.google.co.uk/");
+            URL eighteenth = new URL("http://www.google.co.uk/intl/en/policies/privacy/");
 
-            assertTrue(urls.get(1).equals(third));
-            assertTrue(urls.get(10).equals(twelfth));
-            assertTrue(urls.get(19).equals(twentieth));
+            assertTrue(urls.get(1).equals(first));
+            assertTrue(urls.get(10).equals(tenth));
+            assertTrue(urls.get(18).equals(eighteenth));
 
             // clean database and close connection
             if (resultSet != null) resultSet.close();

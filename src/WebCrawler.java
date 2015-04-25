@@ -8,6 +8,12 @@ import java.sql.*;
  * Created by Basil on 28/03/2015.
  *
  * This is an implementation of the interface <code>Crawler</code>.
+ *
+ * The WebCrawler implements mehods <code>crawl()</code> and <code>search()</code>.
+ *
+ * The main parsing is carries out in internal method <code>parseUrlAndGetLinks()</code>, which makes use of the
+ * Reader class.
+ *
  */
 public class WebCrawler implements Crawler {
 
@@ -31,6 +37,9 @@ public class WebCrawler implements Crawler {
      *
      * </element>
      *
+     * Special attention is paid to the <script> element as this contains Javascript that uses the diamond brackets
+     * outside of the HTML context. All content from an opening script tag is skipped.
+     *
      * @param webUrl    a base URL from which to start the crawl
      * @param db        a connection to a database to store the results
      * @param table     the database table to store results in
@@ -49,7 +58,6 @@ public class WebCrawler implements Crawler {
         // initialise database querying elements
         ResultSet resultSet = null;
         Statement statement = null;
-        String sql = null;
 
         // initialise URLs to crawl
         URL curURL;
@@ -121,7 +129,7 @@ public class WebCrawler implements Crawler {
                             // 9. check if the link exists in the table already
                             dupResultSet = sqlGetUrlFromTable(mainTable, curDepth, curURL.toString());
 
-                            // 25. if no record found, add to main table
+                            // 10. if no record found, add to main table
                             if (dupResultSet == null) {
                                 continue;
                             } else {
@@ -130,7 +138,7 @@ public class WebCrawler implements Crawler {
 
                             if(!(dupResultSet.getInt(1) > 0)) {
 
-                                // add link to db
+                                // 11. add link to db
                                 sqlAddRecordToUrlTable(mainTable, curDepth, curURL.toString());
                                 curLinks++;
 
@@ -146,12 +154,12 @@ public class WebCrawler implements Crawler {
                     continue;
                 }
 
-                // 26. all links at current depth visited, increment to next level
+                // 12. all links at current depth visited, increment to next level
                 curDepth++;
 
             }
 
-            // 27. clean database and close connection
+            // 13. clean database and close connection
             if (resultSet != null) resultSet.close();
             if (statement != null) statement.close();
             db.createStatement().execute("drop table " + stagingTable);
@@ -214,7 +222,6 @@ public class WebCrawler implements Crawler {
         Statement statement;
         ResultSet resultSet;
 
-        // 9. check if the link exists in the table already
         sql = "select count(*) from "
                 + table
                 + " where url = '"
@@ -271,44 +278,44 @@ public class WebCrawler implements Crawler {
             // for each inputStream, the loop continues until all tags read
             // on each cycle, the next opening tag is found and the element is
             // compared to the elements <a> and <script>.
-            // if <a> is found, the link is stored.
+            // if <a> is found, the link is processed.
             // if <script> is found, the inputStream is read until the matching closing tag
             // is found. This is to avoid diamond brackets outside of HTML context.
             // if element that does not match either of these is found, the inputStream continues.
 
-            // 8. find the next opening tag
+            // find the next opening tag
             // e.g. '<'
             if (reader.readUntil(input, OPEN_TAG, CLOSE_TAG)) {
 
                 StringBuilder sb = new StringBuilder();
 
-                // 9. skip any whitespace until character read or closing tag found
+                // skip any whitespace until character read or closing tag found
                 // e.g. 'a'
                 sb.append(reader.skipSpace(input, CLOSE_TAG));    // store first non-whitespace
                 // character found
 
-                // 10. read element until closing tag
+                // read element until closing tag
                 // e.g. 'a class="1" href="www.example.co.uk">'
                 sb.append(reader.readString(input, CLOSE_TAG, Character.MIN_VALUE));  // store element
 
-                // 11. split element into array of attributes
+                // split element into array of attributes
                 // e.g. {'a', 'class="1"', 'href="www.example.co.uk'}
                 String[] split = sb.toString().split("\\s+"); // regex split on consecutive spaces
 
-                // 12. element tag is first in split
+                // element tag is first in split
                 // e.g. 'a'
                 String element = split[0];
 
-                // 13. check if element equals <script> tag
+                // check if element equals <script> tag
                 if (element.equals("script")) {
 
                     // if the element is the <script> element, the following lines of data must
                     // be skipped to avoid parsing diamond brackets in a non-HTML context
 
-                    // 14. consume inputStream until closing </script> tag
+                    // consume inputStream until closing </script> tag
                     while(true) {
 
-                        // 15. closing tag signalled by consecutive '<' and '/'
+                        // closing tag signalled by consecutive '<' and '/'
                         if (reader.readUntil(input, OPEN_TAG, Character.MIN_VALUE)) {
                             if (reader.skipSpace(input, FORWARD_SLASH) != Character.MIN_VALUE) {
                                 // next character not FORWARD_SLASH, continue
@@ -323,30 +330,30 @@ public class WebCrawler implements Crawler {
 
                     }
 
-                    // 16. check if element equals <a> tag
+                    // check if element equals <a> tag
                 } else if (element.equals("a")) {
 
                     // if yes, an anchor has been found, scan the attributes for the link
 
                     String href;    // link to be found
 
-                    // 17. for each attribute found in the anchor tag
+                    // for each attribute found in the anchor tag
                     for (String attribute : split) {
 
-                        // 18. check the length could possibly be href to avoid
+                        // check the length could possibly be href to avoid
                         // error when constructing substring
                         if (attribute.length() > 3) {
 
                             try {
 
-                                // 19. check is href
+                                // check is href
                                 if (attribute.substring(0,4).equals("href")) {
 
-                                    // 20. extract link from href
+                                    // extract link from href
                                     // e.g. href="www.example.co.uk" -> www.example.co.uk
                                     href = attribute.substring(6, attribute.length() - 1);
 
-                                    // 21. add base url to any relative urls
+                                    // add base url to any relative urls
                                     if (href.substring(0, 1).equals("/")) {
                                         if (baseURL.toString().substring(baseURL.toString().length() - 1, baseURL.toString().length()).equals("/")) {
                                             href = baseURL.toString() + href.substring(1, href.length());
@@ -355,7 +362,7 @@ public class WebCrawler implements Crawler {
                                         }
                                     }
 
-                                    // 22. add link to temporary staging database table
+                                    // add link to temporary staging database table
                                     sqlAddRecordToUrlTable(table, depth + 1, href);
 
                                 }
@@ -379,4 +386,5 @@ public class WebCrawler implements Crawler {
         }
 
     }
+
 }
