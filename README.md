@@ -13,6 +13,7 @@ This application has been developed around the java Apache Derby database implem
 found at the following location:
 
 download    - https://db.apache.org/derby/releases/release-10.11.1.1.cgi
+
 file        - /db-derby-10.11.1.1-lib.zip
 
 However, the main WebCrawler implementation should also work with any SQL database that is provided. See the Crawler
